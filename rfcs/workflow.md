@@ -328,7 +328,7 @@ A host conforms to this RFC when:
 - **Replay determinism** — replaying a run yields the same terminal `status` and, for succeeded steps, the same `output`, without calling `execute` again.
 - **Expression scope** — the engine populates `vars`, `steps`, and `trigger` in every expression evaluation as specified.
   See [Amendment — 2026-08-11: the multipart expression envelope and the `render` part kind](#amendment--2026-08-11-the-multipart-expression-envelope-exprvalue-and-the-render-part-kind-f-3), which adds the `secrets` and `documents` roots to that enumeration and governs this bullet.
-- **Step metadata** — see [Amendment — 2026-10-12: step execution metadata (`steps.<id>.meta`)](#amendment--2026-10-12-step-execution-metadata-stepsidmeta): `meta` is host-supplied, allowlisted to four keys, and published only for succeeded app steps.
+- **Step metadata** — applies only to an engine/host pair that implements step metadata, which is optional (an older host that never calls `onExecuted` remains conformant). See [Amendment — 2026-10-12: step execution metadata (`steps.<id>.meta`)](#amendment--2026-10-12-step-execution-metadata-stepsidmeta): `meta` is host-supplied, allowlisted to four keys, and published only for succeeded app steps.
 
 The `@w6w/workflow` reference engine + its test fixtures constitute the executable version of this contract.
 
@@ -1370,8 +1370,13 @@ interface StepMeta {
   one; an opaque id string is an identifier the host chose to report, nothing more.
 - **Normalisation.** The engine normalises what a host reports: a missing or non-string
   `connectionId` becomes `null`; a report lacking a string `app`, `version` or `action` is
-  **discarded** and the step records no meta.
-- The host calls `onExecuted` at most once per attempt, no later than the moment `invoke` settles.
+  **discarded** and the step records no meta. A report whose `app`, `version` or `action` is not a
+  string of at most 256 characters is likewise discarded; a `connectionId` that is not a string of at
+  most 256 characters becomes `null`. A string of exactly 256 characters is kept; 257 is over the cap.
+- Within one attempt the host SHOULD call `onExecuted` at most once, no later than the moment `invoke`
+  settles. If it calls more than once, the engine keeps the FIRST report and ignores later ones. This
+  holds even when the first report is discarded by the normalisation above: the attempt then records no
+  meta, and a later call in that attempt does not replace that outcome.
   An `invoke` that settles without calling it yields a step with no meta; that is not an error.
 
 ### Visibility
@@ -1408,8 +1413,8 @@ set declared by the 2026-08-14 amendment is unchanged, and this section declares
 An engine + host pair that implements step metadata MUST:
 
 - take meta only from `onExecuted`, never from the invoke result, and keep the four allowlisted keys;
-- apply the normalisation above (non-string `connectionId` becomes `null`; an incomplete report is
-  discarded);
+- apply the normalisation above (a non-string or over-256-character `connectionId` becomes `null`; an
+  incomplete or over-cap report is discarded) and keep the first report of an attempt;
 - publish `meta` into scope for succeeded app steps only, and reuse stored meta wherever stored output
   is reused.
 
@@ -1443,6 +1448,8 @@ A host that offers a **single-step test** of a workflow step against supplied st
   pass**: values produced by resolution are never re-walked, so a payload that contains
   `{ "$": … }` or `{{ … }}` reaches the action verbatim;
 - fail **before invocation**, naming the step, when a `$` binding references a step that has no
-  output in the supplied state;
+  output in the supplied state. This differs deliberately from a full run, which resolves the same
+  binding to `null`: a test has no run to fall back on, and a run's behaviour is unchanged for
+  compatibility;
 - resolve a recorded `null` output to `null`;
 - never hand an unresolved marker or `ExprValue` to the action in a `json` or `group` param.

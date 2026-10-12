@@ -420,7 +420,8 @@ amendment only makes explicit how a `group`/`repeat` param renders and scopes, o
 This amendment is additive. The `json` row of [Types](#types) still reads "any", and the preceding
 amendment's closing sentence is unaffected. What a form *authors* for a `json` or `group` param, when
 the param belongs to a workflow step, may be a whole-value binding — an object whose single key is
-`$` or `$expr` — in place of a literal. It resolves to a value of the declared shape before
-validation and invocation. The semantics, including the single-pass resolution rule and what a
+`$` or `$expr` — in place of a literal. It resolves, before
+validation and invocation, to whatever value the referenced path holds; validation then applies the
+param's existing declarative checks, with no deep shape validation of the resolved value. The semantics, including the single-pass resolution rule and what a
 single-step test must do, are specified by the Workflow RFC's
 [whole-value bindings amendment](./workflow.md#amendment--2026-10-12-whole-value-bindings-for-json-and-group-params) and are not restated here.
