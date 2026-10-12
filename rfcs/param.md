@@ -190,6 +190,8 @@ A form is `Param[]`. The surface that owns the form (Action, Trigger, Auth, …)
 | `group` | object | Nested form. Value is a `Record<string, unknown>` whose keys are the `key`s of the params in `children`. See [Groups](#groups). |
 | `section` | — (layout only) | Layout-only container of `children`. `section: "collapsible"` renders a titled, collapsed-by-default disclosure; `section: "group"` a `layout` row/stack. Children's values live in the **enclosing** form (not nested under the section's `key`). See [Sections](#sections). |
 
+See [Amendment — 2026-10-12: whole-value bindings for `json` and `group`](#amendment--2026-10-12-whole-value-bindings-for-json-and-group): an authored `json` or `group` value may be a whole-value `$` binding.
+
 ### UI hints
 
 | `type` | Allowed `ui` values | Default |
@@ -411,3 +413,14 @@ questions this RFC left open. They are recorded here so a second implementation 
 The rest of this RFC — including the five `repeat` lines noted above — stands unedited; this
 amendment only makes explicit how a `group`/`repeat` param renders and scopes, on top of what
 [Groups](#groups) and the [Field reference](#field-reference) already specify.
+
+
+## Amendment — 2026-10-12: whole-value bindings for `json` and `group`
+
+This amendment is additive. The `json` row of [Types](#types) still reads "any", and the preceding
+amendment's closing sentence is unaffected. What a form *authors* for a `json` or `group` param, when
+the param belongs to a workflow step, may be a whole-value binding — an object whose single key is
+`$` or `$expr` — in place of a literal. It resolves to a value of the declared shape before
+validation and invocation. The semantics, including the single-pass resolution rule and what a
+single-step test must do, are specified by the Workflow RFC's
+[whole-value bindings amendment](./workflow.md#amendment--2026-10-12-whole-value-bindings-for-json-and-group-params) and are not restated here.
