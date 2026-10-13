@@ -29,7 +29,10 @@ function getVar(data: unknown, path: unknown, fallback: unknown): unknown {
   let cur: unknown = data;
   for (const part of parts) {
     if (cur === null || cur === undefined) return fallback ?? null;
-    cur = (cur as Record<string, unknown>)[part];
+    // Own properties only (primitives boxed so string `length`/indices still resolve): a
+    // prototype member (`constructor`, `__proto__`, `toString`) reads as a missing key.
+    const boxed = Object(cur) as Record<string, unknown>;
+    cur = Object.hasOwn(boxed, part) ? boxed[part] : undefined;
   }
   return cur === undefined ? (fallback ?? null) : cur;
 }
