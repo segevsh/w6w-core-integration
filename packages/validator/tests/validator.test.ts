@@ -72,6 +72,50 @@ Deno.test("validateAuth requires oauth2 endpoints", () => {
   assert(ok.ok, JSON.stringify(ok.errors));
 });
 
+Deno.test("validateAuth checks the display-only oauth2.setup block", () => {
+  const P = "auth.oauth2.setup";
+  const run = (setup: unknown) =>
+    validateAuth({
+      key: "oauth",
+      type: "oauth2",
+      displayName: "OAuth",
+      oauth2: { authorizationUrl: "https://x.test/a", tokenUrl: "https://x.test/t", setup },
+    }).errors.map((e) => e.path).sort();
+
+  // Well-formed, partial, empty-string hint, unknown keys and absent all pass.
+  assertEquals(run(undefined), []);
+  assertEquals(
+    run({
+      consoleUrl: "https://v.test/apps",
+      instructions: "i",
+      clientIdHint: "c",
+      clientSecretHint: "s",
+      redirectUriHint: "r",
+      extraHint: "e",
+      extraTemplate: { a: [1] },
+      future: 1,
+    }),
+    [],
+  );
+  assertEquals(run({ instructions: "only" }), []);
+  assertEquals(run({ clientIdHint: "" }), []);
+
+  // A non-object block reports only its own path.
+  for (const bad of [null, [], "x", 42]) assertEquals(run(bad), [P]);
+
+  for (const consoleUrl of ["http://v.test/apps", "javascript:alert(1)", "/apps", 42]) {
+    assertEquals(run({ consoleUrl }), [`${P}.consoleUrl`]);
+  }
+  for (
+    const k of ["instructions", "clientIdHint", "clientSecretHint", "redirectUriHint", "extraHint"]
+  ) {
+    assertEquals(run({ [k]: 42 }), [`${P}.${k}`]);
+  }
+  for (const extraTemplate of [[], null, "{}"]) {
+    assertEquals(run({ extraTemplate }), [`${P}.extraTemplate`]);
+  }
+});
+
 Deno.test("CATEGORIES vocabulary contains expected slugs", () => {
   for (const c of ["communication", "developer-tools", "ai", "other"]) {
     assert(CATEGORIES.includes(c), `expected ${c} in CATEGORIES`);

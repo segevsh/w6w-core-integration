@@ -382,6 +382,42 @@ export function validateAuth(auth: unknown, path = "auth"): ValidationResult {
   return ctx.result();
 }
 
+const OAUTH2_SETUP_HINTS = [
+  "instructions",
+  "clientIdHint",
+  "clientSecretHint",
+  "redirectUriHint",
+  "extraHint",
+] as const;
+
+/** `oauth2.setup` is display-only, but a malformed block is still an error. */
+function checkOAuth2Setup(ctx: Ctx, setup: unknown, path: string): void {
+  if (setup === undefined) return;
+  if (!isObject(setup)) {
+    ctx.err(path, "must be an object");
+    return;
+  }
+  if (setup.consoleUrl !== undefined) {
+    let ok = false;
+    if (typeof setup.consoleUrl === "string") {
+      try {
+        ok = new URL(setup.consoleUrl).protocol === "https:";
+      } catch {
+        // not an absolute URL
+      }
+    }
+    if (!ok) ctx.err(`${path}.consoleUrl`, "must be an absolute https URL");
+  }
+  for (const k of OAUTH2_SETUP_HINTS) {
+    if (setup[k] !== undefined && typeof setup[k] !== "string") {
+      ctx.err(`${path}.${k}`, "must be a string");
+    }
+  }
+  if (setup.extraTemplate !== undefined && !isObject(setup.extraTemplate)) {
+    ctx.err(`${path}.extraTemplate`, "must be an object");
+  }
+}
+
 function validateAuthInto(ctx: Ctx, auth: unknown, path: string): void {
   if (!isObject(auth)) {
     ctx.err(path, "must be an object");
@@ -404,6 +440,7 @@ function validateAuthInto(ctx: Ctx, auth: unknown, path: string): void {
     } else {
       checkUrl(ctx, o.authorizationUrl, `${path}.oauth2.authorizationUrl`);
       checkUrl(ctx, o.tokenUrl, `${path}.oauth2.tokenUrl`);
+      checkOAuth2Setup(ctx, o.setup, `${path}.oauth2.setup`);
     }
   }
   if (auth.type === "apiKey") {

@@ -32,6 +32,29 @@ export interface OAuth2Config {
   /** Defaults to `true`. */
   pkce?: boolean;
   extraAuthParams?: Record<string, string>;
+  /** Display-only guidance for registering an OAuth client with the vendor. No flow reads it. */
+  setup?: OAuth2ClientSetup;
+}
+
+/**
+ * Display-only guidance for registering an OAuth client with the vendor
+ * (`oauth2.setup`). Hosts treat every field as untrusted and fall back per field.
+ */
+export interface OAuth2ClientSetup {
+  /** Vendor developer console; an absolute `https:` URL. */
+  consoleUrl?: string;
+  /** Plain-text steps for creating the client. */
+  instructions?: string;
+  /** Plain-text hint for the client id. */
+  clientIdHint?: string;
+  /** Plain-text hint for the client secret. */
+  clientSecretHint?: string;
+  /** Plain-text hint for the redirect URI the vendor asks for. */
+  redirectUriHint?: string;
+  /** Plain-text hint for anything else the vendor asks for. */
+  extraHint?: string;
+  /** Suggested `extra` object for a tenant OAuth app. */
+  extraTemplate?: Record<string, unknown>;
 }
 
 export interface ApiKeyConfig {
