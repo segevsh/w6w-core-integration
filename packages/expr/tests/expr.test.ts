@@ -77,3 +77,41 @@ Deno.test("showIf: undefined rule is always visible; rules coerce to boolean", (
 Deno.test("unknown operator throws", () => {
   assertThrows(() => evaluate({ frobnicate: [1] }), ExprError);
 });
+
+Deno.test("var: legitimate own-property reads are unchanged", () => {
+  const d = { a: { b: 5 }, arr: [10, 20], s: "hey", n: null };
+  assertEquals(evaluate({ var: "a.b" }, d), 5);
+  assertEquals(evaluate({ var: "arr.1" }, d), 20);
+  assertEquals(evaluate({ var: "arr.length" }, d), 2);
+  assertEquals(evaluate({ var: "s.length" }, d), 3);
+  assertEquals(evaluate({ var: "s.0" }, d), "h");
+  assertEquals(evaluate({ var: ["n", "fb"] }, d), null);
+  assertEquals(evaluate({ var: "nope" }, d), null);
+  assertEquals(evaluate({ var: ["nope", "fb"] }, d), "fb");
+  assertEquals(evaluate({ var: "" }, d), d);
+  assertEquals(evaluate({ missing: ["a.b", "zz"] }, d), ["zz"]);
+});
+
+Deno.test("var: prototype members are refused like a missing key", () => {
+  const d = { vars: { x: 1 }, s: "str" };
+  for (
+    const path of [
+      "constructor",
+      "constructor.constructor",
+      "__proto__",
+      "toString",
+      "hasOwnProperty",
+      "vars.constructor.constructor",
+      "s.length.constructor",
+    ]
+  ) {
+    assertEquals(evaluate({ var: path }, d), null, path);
+    assertEquals(evaluate({ var: [path, "fb"] }, d), "fb", path);
+  }
+  assertEquals(evaluate({ missing: ["vars.constructor"] }, d), ["vars.constructor"]);
+});
+
+Deno.test("var: an own property named like a prototype member still reads", () => {
+  assertEquals(evaluate({ var: "constructor" }, { constructor: 1 }), 1);
+  assertEquals(evaluate({ var: "a.toString" }, { a: { toString: "t" } }), "t");
+});
