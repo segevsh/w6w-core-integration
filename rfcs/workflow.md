@@ -111,7 +111,7 @@ The engine never touches the outside world directly. Every operational effect �
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | string | ✅ | Machine name. Unique within the workflow. Downstream expressions reference outputs as `steps.<id>.output`. |
+| `id` | string | ✅ | Machine name. Unique within the workflow. MUST NOT contain `.`: downstream expressions reference outputs as `steps.<id>.output`, a path resolvers split on `.`, so a dotted id could never be addressed. Hosts refuse a dotted id when the workflow is saved. |
 | `uses` | object | ✅ | `{ app, action, connection? }`. Fully names the [Invocation](./invocation.md) target. |
 | `uses.app` | string | ✅ | App id (registry-resolved). |
 | `uses.action` | string | ✅ | Action key within the app. |

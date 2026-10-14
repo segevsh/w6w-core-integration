@@ -291,6 +291,21 @@ Hooks make these first-class instead of workarounds.
 | `scopeSeparator`   | string   | ⬜       | Separator used when joining scopes. Defaults to `" "`. |
 | `pkce`             | boolean  | ⬜       | Enable PKCE. Defaults to `true`.                       |
 | `extraAuthParams`  | object   | ⬜       | Extra query params appended to the authorization URL.  |
+| `setup`            | object   | ⬜       | Display-only client-registration guidance; see [`oauth2.setup`](#oauth2setup). |
+
+#### `oauth2.setup`
+
+An optional block of guidance for registering an OAuth client with the vendor. It is **display-only**: no flow, hook or runtime path reads it, and it plays no part in the `preflight` lifecycle phase (that is a hook that runs at connect time; `setup` here is only text a host may show). Hosts treat every field as **untrusted** and fall back per field when one is missing or unusable. A validator still rejects a malformed block. Every field is optional.
+
+| Field              | Type   | Description                                                                   |
+| ------------------ | ------ | ----------------------------------------------------------------------------- |
+| `consoleUrl`       | URL    | Vendor developer console. Must be an absolute `https:` URL.                   |
+| `instructions`     | string | Plain-text steps for creating the client.                                     |
+| `clientIdHint`     | string | Plain-text hint for the client id.                                            |
+| `clientSecretHint` | string | Plain-text hint for the client secret.                                        |
+| `redirectUriHint`  | string | Plain-text hint for the redirect URI the vendor asks for.                     |
+| `extraHint`        | string | Plain-text hint for anything else the vendor asks for.                        |
+| `extraTemplate`    | object | Suggested `extra` object for a tenant OAuth app (a plain object, not an array). |
 
 ### `apiKey`
 
